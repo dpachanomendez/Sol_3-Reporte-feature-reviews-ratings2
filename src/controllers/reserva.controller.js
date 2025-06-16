@@ -42,6 +42,90 @@ const validarReserva = async (req, res, next) => {
   }
 };
 
+export const deleteReservaAdmin = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const deletedReserva = await Reserva.findByIdAndDelete(id);
+
+    if (!deletedReserva) {
+      return res.status(404).json({ message: 'Reserva no encontrada.' });
+    }
+
+    res.json({ message: 'Reserva eliminada exitosamente.' }); // 200 OK with message
+    // Or, for 204 No Content:
+    // res.status(204).send();
+  } catch (error) {
+    console.error('Error en deleteReservaAdmin:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'ID de reserva inválido.' });
+    }
+    res.status(500).json({ message: 'Error al eliminar la reserva.', error: error.message });
+  }
+};
+
+export const updateReservaAdmin = async (req, res) => {
+  const { id } = req.params;
+  const { fecha, horario, cancha, estado, datosInvitado, metodoPago } = req.body;
+
+  const updateFields = {};
+
+  if (fecha) {
+    const newDate = new Date(fecha);
+    if (isNaN(newDate.getTime())) {
+      return res.status(400).json({ message: 'Fecha inválida proporcionada.' });
+    }
+    updateFields.fecha = newDate;
+  }
+  if (horario) updateFields.horario = horario;
+  if (cancha) updateFields.cancha = cancha;
+
+  // Assuming 'Reserva.schema.path('estado').enumValues' holds the allowed states
+  const allowedEstados = Reserva.schema.path('estado').enumValues;
+  if (estado) {
+    if (allowedEstados && allowedEstados.includes(estado)) {
+      updateFields.estado = estado;
+    } else {
+      return res.status(400).json({ message: `Estado inválido. Los valores permitidos son: ${allowedEstados.join(', ')}` });
+    }
+  }
+
+  if (metodoPago) updateFields.metodoPago = metodoPago;
+
+  if (datosInvitado) {
+    if (typeof datosInvitado.nombre === 'string') updateFields['datosInvitado.nombre'] = datosInvitado.nombre;
+    if (typeof datosInvitado.email === 'string') updateFields['datosInvitado.email'] = datosInvitado.email;
+    if (typeof datosInvitado.telefono === 'string') updateFields['datosInvitado.telefono'] = datosInvitado.telefono;
+  }
+
+  if (Object.keys(updateFields).length === 0) {
+    return res.status(400).json({ message: 'No se proporcionaron campos para actualizar.' });
+  }
+
+  try {
+    const updatedReserva = await Reserva.findByIdAndUpdate(
+      id,
+      { $set: updateFields },
+      { new: true, runValidators: true }
+    ).populate('usuario', 'username email');
+
+    if (!updatedReserva) {
+      return res.status(404).json({ message: 'Reserva no encontrada.' });
+    }
+
+    res.json(updatedReserva);
+  } catch (error) {
+    console.error('Error en updateReservaAdmin:', error);
+    if (error.name === 'CastError') {
+      return res.status(400).json({ message: 'ID de reserva inválido.' });
+    }
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Error de validación.', errors: error.errors });
+    }
+    res.status(500).json({ message: 'Error al actualizar la reserva.', error: error.message });
+  }
+};
+
 export const crearReserva = async (req, res) => {
   try {
     // Verificar disponibilidad
@@ -212,3 +296,22 @@ export const crearReservaInvitado = async (req, res) => {
 
 // Exportar el middleware de validación
 export { validarReserva };
+
+export const getAllReservasForAdmin = async (req, res) => {
+  try {
+    const reservas = await Reserva.find({}).populate('usuario', 'username email');
+    // If you also need to populate guest details and they are stored in a separate linked model:
+    // .populate('datosInvitado', 'nombre email telefono');
+    // However, based on the provided `crearReservaInvitado`, `datosInvitado` is embedded.
+    // So, they will be included by default if `Reserva.find({})` is used.
+
+    res.json(reservas);
+  } catch (error) {
+    console.error('Error en getAllReservasForAdmin:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener todas las reservas para el administrador',
+      error: error.message,
+    });
+  }
+};

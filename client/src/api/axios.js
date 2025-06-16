@@ -17,4 +17,12 @@ export const loginRequest = async (user) =>
 export const verifyTokenRequest = async () => 
   instance.get(`/auth/verify`);
 
+// export const adminLoginRequest = (user) => instance.post('/auth/admin/login', user); // REMOVED
+
+export const getAllReservationsAdminRequest = () => instance.get('/reservas/alladmin');
+
+export const updateReservationAdminRequest = (id, data) => instance.put(`/reservas/admin/${id}`, data);
+
+export const deleteReservationAdminRequest = (id) => instance.delete(`/reservas/admin/${id}`);
+
 export default instance;

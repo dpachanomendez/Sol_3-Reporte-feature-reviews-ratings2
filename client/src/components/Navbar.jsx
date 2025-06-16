@@ -21,9 +21,14 @@ export function Navbar() {
               <ButtonLink to="/reserva">Nueva reserva</ButtonLink>
             </li>
             {user.role === "administrador" && (
-              <li>
-                <ButtonLink to="/reporte-reservas">Reportes</ButtonLink>
-              </li>
+              <>
+                <li>
+                  <ButtonLink to="/admin/dashboard">Admin Dashboard</ButtonLink>
+                </li>
+                <li>
+                  <ButtonLink to="/reporte-reservas">Reportes</ButtonLink>
+                </li>
+              </>
             )}
             <li>
               <Link to="/" onClick={() => logout()}>

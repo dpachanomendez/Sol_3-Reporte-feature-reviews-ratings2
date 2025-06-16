@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { createContext, useContext, useState } from "react";
-import { loginRequest, registerRequest, verifyTokenRequest } from "../api/axios"; // Cambiado de "../api/auth" a "../api/axios"
+// Removed adminLoginRequest from imports
+import { loginRequest, registerRequest, verifyTokenRequest } from "../api/axios";
 import Cookies from "js-cookie";
 
 const AuthContext = createContext();
@@ -12,7 +13,7 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null); // Unified user state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [errors, setErrors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,23 +36,43 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
       }
     } catch (error) {
-      console.log(error.response?.data); // Agregado operador opcional
-      setErrors(error.response?.data?.message || ["Error en el registro"]); // Mejor manejo de errores
+      console.log(error.response?.data);
+      setErrors(error.response?.data?.message || ["Error en el registro"]);
     }
   };
 
-  const signin = async (user) => {
+  const signin = async (userData) => { // Renamed parameter to avoid conflict
     try {
-      const res = await loginRequest(user);
-      if (res.data) { // Verificación adicional
+      const res = await loginRequest(userData);
+      if (res.data) {
         setUser(res.data);
         setIsAuthenticated(true);
       }
     } catch (error) {
       console.log(error);
-      setErrors(error.response?.data?.message || ["Error en el login"]); // Descomentado y mejorado
+      setErrors(error.response?.data?.message || ["Error en el login"]);
     }
   };
+
+  // const adminSignin = async (data) => { // REMOVED
+  //   try {
+  //     const res = await adminLoginRequest(data); // Call API
+  //     if (res.data) {
+  //       setUser(res.data); // Set user with role
+  //       setIsAuthenticated(true);
+  //       setErrors([]);
+  //       return true;
+  //     }
+  //   } catch (error) {
+  //     console.log(error);
+  //     setErrors(error.response?.data?.message || ["Invalid admin credentials"]);
+  //     setUser(null);
+  //     setIsAuthenticated(false);
+  //     return false;
+  //   }
+  // };
+
+  // adminLogout is not needed anymore as logout handles all users
 
   const logout = () => {
     Cookies.remove("token");
@@ -97,6 +118,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated,
         errors,
         loading,
+        // adminSignin, // Expose adminSignin -- REMOVED
       }}
     >
       {children}

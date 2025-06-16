@@ -4,7 +4,10 @@ import rateLimit from 'express-rate-limit';
 import {
   crearReserva,
   crearReservaInvitado,
-  validarReserva
+  validarReserva,
+  getAllReservasForAdmin,
+  updateReservaAdmin,
+  deleteReservaAdmin // Import the delete function
 } from '../controllers/reserva.controller.js';
 import { confirmReserva, cancelReserva } from '../controllers/notificationAction.controller.js';
 import { auth } from '../middlewares/auth.middleware.js';
@@ -44,5 +47,25 @@ router.put(
 
 router.get('/reporte/csv', auth, requireAdmin, exportReservasCSV);
 
+// New route for admin to get all reservations
+router.get("/alladmin", auth, requireAdmin, getAllReservasForAdmin);
+
+// New route for admin to update any reservation
+router.put(
+  "/admin/:id",
+  auth,
+  requireAdmin,
+  [check('id', 'ID de reserva inválido').isMongoId()],
+  updateReservaAdmin
+);
+
+// New route for admin to delete any reservation
+router.delete(
+  "/admin/:id",
+  auth,
+  requireAdmin,
+  [check('id', 'ID de reserva inválido').isMongoId()],
+  deleteReservaAdmin
+);
 
 export default router;
